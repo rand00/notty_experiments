@@ -33,13 +33,13 @@ module Image = struct
 
   open Gg
 
-  let default_attr = Notty.A.(fg blue ++ bg black)
+  let default_attr = Notty.A.(fg red)
 
-  let sine x (w, h) =
-    let x = float x in
-    let y = sin x in
+  let sine t (w, h) =
+    let t = float t *. 0.2 in
+    let y = sin t in
     let x_scaled =
-      let scaled = x *. 1.5 |> Float.round |> truncate in
+      let scaled = t *. 10. |> Float.round |> truncate in
       scaled mod w
     in
     let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
@@ -48,17 +48,21 @@ module Image = struct
     |> I.hpad x_scaled 0
     |> I.vpad y_scaled 0
 
+  let history acc image =
+    let open Notty in
+    I.(acc </> image)
   
 end
 
-let output_image (image, term) =
-  match term with
-  | None -> Lwt.return_unit
-  | Some term -> Term.image term image
+let image_e =
+  S.sample Image.sine tick_e dimensions_s
+  |> E.fold Image.history Notty.I.empty
 
 let _output_e =
-  let image_e =
-    S.sample Image.sine tick_e dimensions_s
+  let output_image (image, term) =
+    match term with
+    | None -> Lwt.return_unit
+    | Some term -> Term.image term image
   in
   S.sample (fun v v' -> v, v') image_e term_s
   |> E.map_s output_image
