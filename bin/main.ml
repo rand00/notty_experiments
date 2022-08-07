@@ -4,7 +4,7 @@ module Term = Notty_lwt.Term
 open Lwt.Infix
 open Lwt_react
 
-let fps = 100.
+let fps = 200.
 
 let tick_e, tick_eupd = E.create ()
 
@@ -22,14 +22,6 @@ let dimensions_s =
 
 let sp = Printf.sprintf
 
-(*
-let size_s =
-  let aux _ term_opt =
-    term_opt |> Option.map Term.size
-  in
-  S.sample aux tick_e term_s
-*)
-
 module Image = struct
 
   open Gg
@@ -37,13 +29,15 @@ module Image = struct
   let default_attr = Notty.A.(fg red)
 
   let sine t_orig (w, h) =
-    let t_orig = float t_orig *. 0.5 |> truncate in
+    let t_orig = float t_orig *. 2.0 |> truncate in
+    (*< influences speed of sine movement*)
+    let t_factor = 0.04 in (*< influences samplings of sine in image*)
     let open Notty in
-    let rec aux acc t_in = 
-      let t = float t_in *. 0.02 in
+    let rec aux acc t_in =
+      let t = float t_in *. t_factor in
       let y = sin t in
       let x_scaled, did_wrap =
-        let scaled = (t -. float t_orig) *. 10. |> Float.round |> truncate in
+        let scaled = (t -. float t_orig *. t_factor) *. 10. |> Float.round |> truncate in
         scaled mod w, scaled >= w
       in
       if did_wrap then
@@ -51,7 +45,7 @@ module Image = struct
       else
         let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
         let image = 
-          I.string default_attr "."
+          I.string default_attr "x"
           |> I.hpad x_scaled 0
           |> I.vpad y_scaled 0
         in
