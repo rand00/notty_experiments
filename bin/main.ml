@@ -4,9 +4,10 @@ module Term = Notty_lwt.Term
 open Lwt.Infix
 open Lwt_react
 
-let fps = 200.
+let fps = 100.
 
 let tick_e, tick_eupd = E.create ()
+
 let term_s, term_supd = S.create None 
 
 let dimensions_s =
@@ -35,18 +36,28 @@ module Image = struct
 
   let default_attr = Notty.A.(fg red)
 
-  let sine t (w, h) =
-    let t = float t *. 0.2 in
-    let y = sin t in
-    let x_scaled =
-      let scaled = t *. 10. |> Float.round |> truncate in
-      scaled mod w
-    in
-    let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
+  let sine t_orig (w, h) =
+    let t_orig = float t_orig *. 0.5 |> truncate in
     let open Notty in
-    I.string default_attr "x"
-    |> I.hpad x_scaled 0
-    |> I.vpad y_scaled 0
+    let rec aux acc t_in = 
+      let t = float t_in *. 0.02 in
+      let y = sin t in
+      let x_scaled, did_wrap =
+        let scaled = (t -. float t_orig) *. 10. |> Float.round |> truncate in
+        scaled mod w, scaled >= w
+      in
+      if did_wrap then
+        acc
+      else
+        let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
+        let image = 
+          I.string default_attr "x"
+          |> I.hpad x_scaled 0
+          |> I.vpad y_scaled 0
+        in
+        aux I.(acc </> image) (succ t_in)
+    in
+    aux I.empty t_orig
 
   let history acc image =
     let open Notty in
@@ -56,7 +67,7 @@ end
 
 let image_e =
   S.sample Image.sine tick_e dimensions_s
-  |> E.fold Image.history Notty.I.empty
+(*|> E.fold Image.history Notty.I.empty*)
 
 let _output_e =
   let output_image (image, term) =
@@ -79,7 +90,9 @@ let () =
   let term = Term.create ~nosig:false () in
   Lwt_main.at_exit (fun () -> Term.release term);
   term_supd @@ Some term;
-  Lwt_main.run @@ loop_ticks ()
+  Lwt_main.run Lwt.Infix.(
+    loop_ticks () 
+  )
 
 
 
