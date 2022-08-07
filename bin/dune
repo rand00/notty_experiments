@@ -1,0 +1,16 @@
+(executable
+ (public_name nottyperf)
+ (name main)
+ (flags (:standard
+         (-w -27-33-26-21-32)
+         ))
+ (libraries
+  nottyperf
+  lwt
+  lwt.unix
+  lwt_react
+  notty
+  notty.lwt 
+  gg
+  containers
+  ))
