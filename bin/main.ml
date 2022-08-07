@@ -51,7 +51,7 @@ module Image = struct
       else
         let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
         let image = 
-          I.string default_attr "x"
+          I.string default_attr "."
           |> I.hpad x_scaled 0
           |> I.vpad y_scaled 0
         in
