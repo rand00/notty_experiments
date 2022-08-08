@@ -28,15 +28,16 @@ module Image = struct
 
   let default_attr = Notty.A.(fg red)
 
-  let sine ?(speed_factor=2.0) t_orig (w, h) =
-    let t_orig = float t_orig *. speed_factor |> truncate in
+  let render_f ?(speed=2.0) ?(move=(0,0)) ~f t_orig (w, h) =
+    let move_x, move_y = move in
+    let t_orig = float t_orig *. speed |> truncate in
     (*< influences speed of sine movement*)
     let t_factor = 300. /. (float w *. float h) in
     (*< influences samplings of sine in image*)
     let open Notty in
     let rec aux acc t_in =
       let t = float t_in *. t_factor in
-      let y = sin t in
+      let y = f t in
       let x_scaled, did_wrap =
         let scaled = (t -. float t_orig *. t_factor) *. 10. |> Float.round |> truncate in
         scaled mod w, scaled >= w
@@ -47,8 +48,8 @@ module Image = struct
         let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
         let image = 
           I.string default_attr "x"
-          |> I.hpad x_scaled 0
-          |> I.vpad y_scaled 0
+          |> I.hpad (move_x + x_scaled) 0
+          |> I.vpad (move_y + y_scaled) 0
         in
         aux I.(acc </> image) (succ t_in)
     in
@@ -56,13 +57,30 @@ module Image = struct
 
   let sines t (w, h) =
     let open Notty in
+    let s0_t_scaled = float t /. 40. in
+    let s0_h_f = 1. +. 35. *. (sin s0_t_scaled +. 1.) /. 2. in
+    let s0_h = s0_h_f |> truncate in
+    let s0_speed = 0.4 *. (sin s0_t_scaled +. 1.) /. 2. in
+    let s0_move_y_f = 1. +. 5. *. (sin s0_t_scaled +. 1.) /. 2. in
+    let s0_move_y = s0_move_y_f |> truncate in
+    let s0_move = 0, s0_move_y in
+    let s1_move = 0, s0_h in
+    let s1_speed = s0_move_y_f *. 0.2 in
+    let s1_t = t * 3 in
+    let sin_sum t =
+      (
+        sin t
+        +. sin (s0_move_y_f *. 1.)
+        +. sin (t *. 0.3)
+        +. sin (s0_h_f *. 0.732)
+        +. sin (t +. s0_h_f *. 0.23)
+      )
+      /. 5.
+    in
     [
-      sine ~speed_factor:8. t (w, h / 1);
-      sine ~speed_factor:(-3.) t (w, h / 2);
-      sine ~speed_factor:(-7.) t (w, h / 3);
-      sine ~speed_factor:3.3 t (w, h / 4);
-(*      sine ~speed_factor:3.4 t dimensions;
-        sine ~speed_factor:3.8 t dimensions;*)
+      render_f ~f:sin ~speed:s0_speed ~move:s0_move t (w, s0_h);
+      render_f ~f:sin ~speed:s1_speed ~move:s1_move s1_t (w, h);
+      render_f ~f:sin_sum t (w, h);
     ]
     |> I.zcat 
   
