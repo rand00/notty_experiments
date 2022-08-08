@@ -31,7 +31,8 @@ module Image = struct
   let sine ?(speed_factor=2.0) t_orig (w, h) =
     let t_orig = float t_orig *. speed_factor |> truncate in
     (*< influences speed of sine movement*)
-    let t_factor = 0.04 in (*< influences samplings of sine in image*)
+    let t_factor = 300. /. (float w *. float h) in
+    (*< influences samplings of sine in image*)
     let open Notty in
     let rec aux acc t_in =
       let t = float t_in *. t_factor in
