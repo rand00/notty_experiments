@@ -53,13 +53,13 @@ module Image = struct
     in
     aux I.empty t_orig
 
-  let sines t dimensions =
+  let sines t (w, h) =
     let open Notty in
     [
-      sine ~speed_factor:8. t dimensions;
-      sine ~speed_factor:(-3.) t dimensions;
-      sine ~speed_factor:(-7.) t dimensions;
-      sine ~speed_factor:3.3 t dimensions;
+      sine ~speed_factor:8. t (w, h / 1);
+      sine ~speed_factor:(-3.) t (w, h / 2);
+      sine ~speed_factor:(-7.) t (w, h / 3);
+      sine ~speed_factor:3.3 t (w, h / 4);
 (*      sine ~speed_factor:3.4 t dimensions;
         sine ~speed_factor:3.8 t dimensions;*)
     ]
