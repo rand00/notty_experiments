@@ -32,7 +32,7 @@ module Image = struct
     let move_x, move_y = move in
     let t_orig = float t_orig *. speed |> truncate in
     (*< influences speed of sine movement*)
-    let t_factor = 300. /. (float w *. float h) in
+    let t_factor = 0.004 *. log (float w *. float h) in
     (*< influences samplings of sine in image*)
     let open Notty in
     let rec aux acc t_in =
@@ -47,7 +47,7 @@ module Image = struct
       else
         let y_scaled = (y /. 2. +. 0.5) *. float h |> Float.round |> truncate in
         let image = 
-          I.string default_attr "x"
+          I.string default_attr "~"
           |> I.hpad (move_x + x_scaled) 0
           |> I.vpad (move_y + y_scaled) 0
         in
@@ -81,6 +81,7 @@ module Image = struct
       render_f ~f:sin ~speed:s0_speed ~move:s0_move t (w, s0_h);
       render_f ~f:sin ~speed:s1_speed ~move:s1_move s1_t (w, h);
       render_f ~f:sin_sum t (w, h);
+      render_f ~f:sin ~move:(s0_h * 2, s0_h/2) t (50, 30);
     ]
     |> I.zcat 
   
