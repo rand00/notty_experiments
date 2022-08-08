@@ -28,8 +28,8 @@ module Image = struct
 
   let default_attr = Notty.A.(fg red)
 
-  let sine t_orig (w, h) =
-    let t_orig = float t_orig *. 2.0 |> truncate in
+  let sine ?(speed_factor=2.0) t_orig (w, h) =
+    let t_orig = float t_orig *. speed_factor |> truncate in
     (*< influences speed of sine movement*)
     let t_factor = 0.04 in (*< influences samplings of sine in image*)
     let open Notty in
@@ -53,6 +53,18 @@ module Image = struct
     in
     aux I.empty t_orig
 
+  let sines t dimensions =
+    let open Notty in
+    [
+      sine ~speed_factor:8. t dimensions;
+      sine ~speed_factor:(-3.) t dimensions;
+      sine ~speed_factor:(-7.) t dimensions;
+      sine ~speed_factor:3.3 t dimensions;
+(*      sine ~speed_factor:3.4 t dimensions;
+        sine ~speed_factor:3.8 t dimensions;*)
+    ]
+    |> I.zcat 
+  
   let history acc image =
     let open Notty in
     I.(acc </> image)
@@ -60,7 +72,7 @@ module Image = struct
 end
 
 let image_e =
-  S.sample Image.sine tick_e dimensions_s
+  S.sample Image.sines tick_e dimensions_s
 (*|> E.fold Image.history Notty.I.empty*)
 
 let _output_e =
