@@ -5,6 +5,7 @@ open Lwt.Infix
 open Lwt_react
 
 let fps = 200.
+(*let fps = 10.*)
 
 let tick_e, tick_eupd = E.create ()
 
@@ -26,7 +27,7 @@ module Image = struct
 
   open Gg
 
-  let default_attr = Notty.A.(fg red)
+  let default_attr = Notty.A.(fg lightred)
 
   let render_f ?(speed=2.0) ?(move=(0,0)) ~f t_orig (w, h) =
     let move_x, move_y = move in
@@ -54,45 +55,37 @@ module Image = struct
         aux I.(acc </> image) (succ t_in)
     in
     aux I.empty t_orig
-
-  let sines t (w, h) =
-    let open Notty in
-    let s0_t_scaled = float t /. 40. in
-    let s0_h_f = 1. +. 35. *. (sin s0_t_scaled +. 1.) /. 2. in
-    let s0_h = s0_h_f |> truncate in
-    let s0_speed = 0.4 *. (sin s0_t_scaled +. 1.) /. 2. in
-    let s0_move_y_f = 1. +. 5. *. (sin s0_t_scaled +. 1.) /. 2. in
-    let s0_move_y = s0_move_y_f |> truncate in
-    let s0_move = 0, s0_move_y in
-    let s1_move = 0, s0_h in
-    let s1_speed = s0_move_y_f *. 0.2 in
-    let s1_t = t * 3 in
-    let sin_sum t =
-      (
-        sin t
-        +. sin (s0_move_y_f *. 1.)
-        +. sin (t *. 0.3)
-        +. sin (s0_h_f *. 0.732)
-        +. sin (t +. s0_h_f *. 0.23)
-      )
-      /. 5.
-    in
-    [
-      render_f ~f:sin ~speed:s0_speed ~move:s0_move t (w, s0_h);
-      render_f ~f:sin ~speed:s1_speed ~move:s1_move s1_t (w, h);
-      render_f ~f:sin_sum t (w, h);
-      render_f ~f:sin ~move:(s0_h * 2, s0_h/2) t (50, 30);
-    ]
-    |> I.zcat 
   
   let history acc image =
     let open Notty in
     I.(acc </> image)
+
+  let no_idea t (w, h) (acc_image_final, acc_image) =
+    let open Notty in
+    let sub_image =
+      I.string A.(fg red) "o"
+    in
+    let t_x = (sin (float t) /. 2. +. 0.5) *. 3. |> truncate in
+    let t_y = t_x in
+    let acc_image =
+      if t_x mod 3 = 0 then
+        let sub_image = I.hpad 0 1 sub_image in
+        I.(sub_image <|> acc_image)
+      else
+        let sub_image = I.vpad 0 1 sub_image in
+        I.(sub_image <-> acc_image)
+    in
+    let acc_image_final =
+      I.pad ~l:(w/2) ~t:(h/2) acc_image
+    in
+    acc_image_final, acc_image
   
 end
 
 let image_e =
-  S.sample Image.sines tick_e dimensions_s
+  S.sample Image.no_idea tick_e dimensions_s
+  |> E.fold (CCFun.flip (@@)) Notty.I.(empty, empty)
+  |> E.map fst
 (*|> E.fold Image.history Notty.I.empty*)
 
 let _output_e =
