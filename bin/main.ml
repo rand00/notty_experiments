@@ -4,7 +4,7 @@ module Term = Notty_lwt.Term
 open Lwt.Infix
 open Lwt_react
 
-let fps = 200.
+let fps = 300.
 
 let tick_e, tick_eupd = E.create ()
 
